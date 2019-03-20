@@ -1,0 +1,44 @@
+MySQL
+------
+mysql -uroot -proot
+
+mysql> create database sqoop;
+mysql> use sqoop;
+mysql> CREATE TABLE patient(pid INT(10),name VARCHAR(20),drug VARCHAR(20),gender VARCHAR(3), tot_amt INT(10));
+mysql> insert into patient values(1,'saravanan','avil','M',100);
+mysql> insert into patient values(2,'senthil','metacin','M',200);
+mysql> insert into patient values(3,'Gowtham','paracetamol','M',300);
+mysql> select * from patient;
+mysql> exit;
+
+SQOOP
+-------
+sqoop list-databases --connect jdbc:mysql://localhost/information_schema --username root --password root
+
+sqoop list-tables --connect jdbc:mysql://localhost/information_schema --username root --password root
+
+sqoop eval --connect jdbc:mysql://localhost/sqoop --username root --password root --query 'select * from patient'
+
+hdfs dfs -mkdir /sqoop
+
+1) Mysql to HDFS
+sqoop import --connect jdbc:mysql://localhost/sqoop --username root --password root --table patient -m 1 --target-dir '/sqoop/importeddata'
+
+sqoop import --connect jdbc:mysql://localhost/sqoop --username root --password root --table patient -m 1 --where "name='senthil'" --target-dir '/sqoop/whereclause'
+
+sqoop import --connect jdbc:mysql://localhost/sqoop --username root --password root --table patient --split-by pid -m 2 --target-dir '/sqoop/split'
+
+2) Mysql to Hive
+sqoop import --connect jdbc:mysql://localhost/sqoop --username root --password root --table patient --hive-table patienthive --create-hive-table --hive-import -m 1
+
+
+4) HDFS to Mysql
+mysql> use sqoop;
+mysql> create table hdfspatient like patient;
+mysql> exit;
+
+sqoop export --connect jdbc:mysql://localhost/sqoop --username root --password root --table hdfspatient --export-dir /sqoop/importeddata
+
+5) Importing all tables
+/* create sample tables before continuing */
+sqoop import-all-tables --connect jdbc:mysql://localhost/sqoop --username root -—password root —-target-dir /allsqoop —-autoreset-to-one-mapper —-exclude-tables table1,table2
